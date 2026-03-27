@@ -1,0 +1,24 @@
+{
+  "name": "@openclaw/openzalo",
+  "version": "1.0.0",
+  "description": "OpenClaw Zalo Plugin using Persistent Daemon",
+  "type": "module",
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "channel": {
+      "id": "openzalo",
+      "label": "OpenZalo Daemon Mode",
+      "blurb": "Fast Zalo messaging via persistent daemon architecture."
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
