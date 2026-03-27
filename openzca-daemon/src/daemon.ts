@@ -2,62 +2,74 @@ import readline from 'readline';
 
 /**
  * ZcaDaemon Worker Process
- * Keeps a persistent loop to process sending commands without Node startup overheads.
+ *
+ * Runs as a persistent child process. Accepts newline-delimited JSON commands
+ * from parent via stdin; replies with JSON acks via stdout.
+ *
+ * Because the daemon is a single long-lived process, there is no per-message
+ * Node.js startup overhead. The key invariant: commands are processed
+ * SEQUENTIALLY in the order received — the parent is responsible for
+ * pipelining writes (which it does via sendChunks). This gives us
+ * Zalo delivery-order guarantees with no extra locking on the daemon side.
  */
 
-// A mock generic API instance that theoretically holds the Zalo session
-class ZaloSession {
-    connected = false;
+type SendCmd = {
+    action: 'send';
+    reqId: string;
+    threadId: string;
+    text: string;
+};
 
-    async connect() {
-        // In real openzca, this restores the session context using zca-js
-        this.connected = true;
-    }
+type Cmd = SendCmd;
 
-    async sendText(threadId: string, text: string) {
-        // Mock Zalo sending delay
-        return new Promise(resolve => setTimeout(resolve, 150));
-    }
+// ── Simulated Zalo session (replace with real zca-js API calls) ──────────────
+
+async function sendViaZalo(threadId: string, text: string): Promise<string> {
+    // Real implementation: await zaloApi.sendMessage(threadId, text);
+    await new Promise(resolve => setTimeout(resolve, 150)); // simulated network RTT
+    return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// ── Main loop ────────────────────────────────────────────────────────────────
+
 async function main() {
-    const session = new ZaloSession();
-    await session.connect();
+    // Signal readiness to parent
+    process.stdout.write(JSON.stringify({ type: 'ready' }) + '\n');
 
-    // Notify parent that we are ready
-    console.log(JSON.stringify({ type: 'ready' }));
+    const rl = readline.createInterface({ input: process.stdin, terminal: false });
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        terminal: false
-    });
-
-    rl.on('line', async (line) => {
-        if (!line.trim()) return;
+    // Process commands sequentially (preserves Zalo delivery order)
+    // The parent pipelines writes so we receive them rapidly; we resolve each
+    // in-order and ack immediately — enabling the parent's Promise.all to
+    // resolve sooner than fully sequential round-trips would allow.
+    for await (const line of rl) {
+        if (!line.trim()) continue;
+        let cmd: Cmd | null = null;
         try {
-            const cmd = JSON.parse(line);
-            
-            if (cmd.action === 'send') {
-                await session.sendText(cmd.threadId, cmd.text);
-                
-                // Acknowledge sending back to the parent client
-                console.log(JSON.stringify({ 
-                    reqId: cmd.reqId, 
-                    success: true, 
-                    msgId: `msg_${Date.now()}` 
-                }));
-            }
-        } catch (err: any) {
-            // Echo error back matching the line if possible
-            console.log(JSON.stringify({ 
-                error: err.message || 'Unknown error parse loop' 
-            }));
+            cmd = JSON.parse(line);
+        } catch {
+            process.stdout.write(JSON.stringify({ error: 'parse_error' }) + '\n');
+            continue;
         }
-    });
+
+        if (!cmd) continue;
+
+        if (cmd.action === 'send') {
+            try {
+                const msgId = await sendViaZalo(cmd.threadId, cmd.text);
+                process.stdout.write(
+                    JSON.stringify({ reqId: cmd.reqId, success: true, msgId }) + '\n'
+                );
+            } catch (err: any) {
+                process.stdout.write(
+                    JSON.stringify({ reqId: cmd.reqId, error: err.message }) + '\n'
+                );
+            }
+        }
+    }
 }
 
 main().catch(err => {
-    console.error(JSON.stringify({ type: 'fatal', error: err.message }));
+    process.stderr.write(JSON.stringify({ type: 'fatal', error: String(err) }) + '\n');
     process.exit(1);
 });
