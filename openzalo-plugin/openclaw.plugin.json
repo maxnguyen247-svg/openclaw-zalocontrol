@@ -1,9 +1,0 @@
-{
-  "id": "openzalo",
-  "channels": ["openzalo"],
-  "configSchema": {
-    "type": "object",
-    "additionalProperties": false,
-    "properties": {}
-  }
-}
