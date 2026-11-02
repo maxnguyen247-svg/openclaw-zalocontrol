@@ -68,7 +68,10 @@ def pick(date, today, plan, actual, fallback):
     return ('plan', plan) if plan else None
 
 
-def collect(wb, sheets, name, name_col, today, fallback):
+def collect(wb, sheets, name, name_col, today, fallback, past_days=None, future_days=None):
+    """past_days/future_days: chỉ lấy ngày trong [today - past_days, today + future_days]; None = không giới hạn."""
+    lo = today - dt.timedelta(days=past_days) if past_days is not None else None
+    hi = today + dt.timedelta(days=future_days) if future_days is not None else None
     events = {}
     for sheet in sheets:
         if sheet not in wb.sheetnames:
@@ -80,7 +83,7 @@ def collect(wb, sheets, name, name_col, today, fallback):
             print(f'bỏ qua: tab {sheet} không có hàng {name}', file=sys.stderr)
             continue
         for date, cols in sorted(dates.items()):
-            if date in events:
+            if date in events or (lo and date < lo) or (hi and date > hi):
                 continue
             plan = norm(ws.cell(row, cols['plan']).value) if 'plan' in cols else ''
             actual = norm(ws.cell(row, cols['actual']).value) if 'actual' in cols else ''
@@ -151,6 +154,8 @@ def main():
                     help='ngày đã qua mà 實際 trống thì lấy 預計 (mặc định bật)')
     ap.add_argument('--no-fallback', dest='fallback', action='store_false')
     ap.add_argument('--label', action='store_true', help='thêm [實際]/[預計] vào đầu tiêu đề (mặc định không)')
+    ap.add_argument('--past-days', type=int, default=None, help='chỉ lấy tối đa N ngày trước hôm nay (mặc định: không giới hạn)')
+    ap.add_argument('--future-days', type=int, default=None, help='chỉ lấy tối đa N ngày sau hôm nay (mặc định: không giới hạn)')
     ap.add_argument('--uid-domain', default='openclaw-zalocontrol')
     ap.add_argument('--out', default='-')
     a = ap.parse_args()
@@ -161,7 +166,7 @@ def main():
         sheets = [s for s in (f'{today.year}工作日報', f'{today.year + 1}工作日報') if s in wb.sheetnames]
     else:
         sheets = [s.strip() for s in a.sheets.split(',') if s.strip()]
-    events = collect(wb, sheets, a.name, a.name_col, today, a.fallback)
+    events = collect(wb, sheets, a.name, a.name_col, today, a.fallback, a.past_days, a.future_days)
     ics = to_ics(events, a.name, a.tz, a.uid_domain, a.label)
     if a.out == '-':
         sys.stdout.write(ics)

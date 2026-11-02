@@ -3,9 +3,10 @@
 Hai cách làm, cùng một quy tắc:
 
 1. **Lịch đăng ký (.ics) qua GitHub Actions** — đang dùng. Workflow
-   `.github/workflows/calendar-feed.yml` chạy mỗi đêm 00:05 giờ Việt Nam, tải sheet
-   (chia sẻ công khai) bằng link export, chạy `ics/build_ics.py` và đưa file
-   `chunfeng.ics` lên nhánh `calendar-feed`. iPhone đăng ký lịch bằng link:
+   `.github/workflows/calendar-feed.yml` chạy mỗi 10 phút, tải sheet
+   (chia sẻ công khai) bằng link export, chạy `ics/build_ics.py` (chỉ lấy sự kiện từ
+   30 ngày trước đến 45 ngày sau hôm nay, đổi ở `--past-days`/`--future-days`) và đưa file
+   `chunfeng.ics` lên nhánh `calendar-feed` khi nội dung có thay đổi. iPhone đăng ký lịch bằng link:
    `https://raw.githubusercontent.com/maxnguyen247-svg/openclaw-zalocontrol/calendar-feed/chunfeng.ics`
    (Cài đặt → Lịch → Tài khoản → Thêm tài khoản → Khác → Thêm lịch đăng ký).
    Không cần tài khoản Google trên máy. iPhone tự tải lại lịch định kỳ.
