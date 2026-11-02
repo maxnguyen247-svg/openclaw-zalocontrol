@@ -19,12 +19,13 @@ Cả hai đều chỉ đọc sheet, không ghi ngược.
 
 | Ngày trong sheet | Lấy cột | Tiêu đề sự kiện |
 |---|---|---|
-| ≤ hôm nay | 實際工作 (nếu trống và fallback bật → 預計工作) | nội dung ô |
-| > hôm nay | 預計工作 | nội dung ô |
+| ≤ hôm nay | 實際工作 (nếu trống và fallback bật → 預計工作) | `🟢 nội dung` (thực tế) hoặc `🔵 nội dung` (nếu phải dùng dự kiến) |
+| > hôm nay | 預計工作 | `🔵 nội dung` (dự kiến) |
 
 - Mỗi ngày tối đa 1 sự kiện cả ngày. Ô trống → không có sự kiện (sự kiện cũ bị xóa).
-- Tiêu đề không có nhãn. Muốn thêm `[實際]`/`[預計]` vào đầu: thêm `--label` vào lệnh
-  trong workflow (cách 1) hoặc điền `PREFIX` trong `Code.gs` (cách 2, kèm màu xanh lá/xanh dương).
+- Lịch đăng ký (.ics) không đổi được màu chữ từng sự kiện, nên cách 1 dùng icon nhỏ ở đầu tiêu đề
+  (`--mark icon` trong workflow). Đổi sang chữ `[預計]`/`[實際]` bằng `--mark label`, bỏ hẳn bằng `--mark none`.
+  Cách 2 (`Code.gs`) phân biệt bằng màu xanh lá/xanh dương của sự kiện, hoặc điền `PREFIX`.
 - Sheet là nguồn chuẩn: sửa, xóa hay kéo sự kiện trên điện thoại sẽ bị ghi đè ở lần chạy kế tiếp.
 - Ô có xuống dòng được nối bằng ` / ` trong tiêu đề.
 - Script tạo một tab ẩn `_CalSync` để nhớ sự kiện nào thuộc ngày nào. Không xóa tab này.

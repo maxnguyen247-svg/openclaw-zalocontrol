@@ -46,6 +46,7 @@ jobs:
             --src "https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx" \
             --name "${PERSON}" \
             --past-days 30 --future-days 45 \
+            --mark icon \
             --out "out/${FEED_FILE}"
 
       - name: Publish to feed branch

@@ -4,7 +4,7 @@
 Quy tắc mỗi ngày (tối đa 1 sự kiện cả ngày, tiêu đề = nội dung ô):
   - ngày <= hôm nay : cột 實際工作; nếu trống và --fallback -> cột 預計工作
   - ngày >  hôm nay : cột 預計工作
-  (--label thêm "[實際] " / "[預計] " vào đầu tiêu đề)
+  (--mark icon thêm 🔵 dự kiến / 🟢 thực tế vào đầu tiêu đề; --mark label thêm "[預計] "/"[實際] ")
 
 Dùng:
   python3 build_ics.py --src <URL export xlsx | file.xlsx> --name 春豐 --out chunfeng.ics
@@ -22,6 +22,7 @@ import openpyxl
 
 LABEL = {'plan': '預計工作', 'actual': '實際工作'}
 PREFIX = {'plan': '[預計] ', 'actual': '[實際] '}
+ICON = {'plan': '\U0001F535 ', 'actual': '\U0001F7E2 '}  # 🔵 dự kiến, 🟢 thực tế
 
 
 def norm(v):
@@ -110,7 +111,8 @@ def fold(line):
     return '\r\n'.join(out)
 
 
-def to_ics(events, name, tz, uid_domain, label=False):
+def to_ics(events, name, tz, uid_domain, mark='none'):
+    marks = {'none': {'plan': '', 'actual': ''}, 'icon': ICON, 'label': PREFIX}[mark]
     tag = hashlib.md5(name.encode('utf-8')).hexdigest()[:8]
     lines = [
         'BEGIN:VCALENDAR',
@@ -133,7 +135,7 @@ def to_ics(events, name, tz, uid_domain, label=False):
             f'DTSTAMP:{d}T000000Z',
             f'DTSTART;VALUE=DATE:{d}',
             f'DTEND;VALUE=DATE:{nxt}',
-            f'SUMMARY:{esc((PREFIX[kind] if label else "") + text)}',
+            f'SUMMARY:{esc(marks[kind] + text)}',
             'TRANSP:TRANSPARENT',
             'END:VEVENT',
         ]
@@ -153,7 +155,8 @@ def main():
     ap.add_argument('--fallback', dest='fallback', action='store_true', default=True,
                     help='ngày đã qua mà 實際 trống thì lấy 預計 (mặc định bật)')
     ap.add_argument('--no-fallback', dest='fallback', action='store_false')
-    ap.add_argument('--label', action='store_true', help='thêm [實際]/[預計] vào đầu tiêu đề (mặc định không)')
+    ap.add_argument('--mark', choices=['none', 'icon', 'label'], default='none',
+                    help='đánh dấu đầu tiêu đề: icon = 🔵 dự kiến / 🟢 thực tế; label = [預計]/[實際]; none = không')
     ap.add_argument('--past-days', type=int, default=None, help='chỉ lấy tối đa N ngày trước hôm nay (mặc định: không giới hạn)')
     ap.add_argument('--future-days', type=int, default=None, help='chỉ lấy tối đa N ngày sau hôm nay (mặc định: không giới hạn)')
     ap.add_argument('--uid-domain', default='openclaw-zalocontrol')
@@ -167,7 +170,7 @@ def main():
     else:
         sheets = [s.strip() for s in a.sheets.split(',') if s.strip()]
     events = collect(wb, sheets, a.name, a.name_col, today, a.fallback, a.past_days, a.future_days)
-    ics = to_ics(events, a.name, a.tz, a.uid_domain, a.label)
+    ics = to_ics(events, a.name, a.tz, a.uid_domain, a.mark)
     if a.out == '-':
         sys.stdout.write(ics)
     else:
