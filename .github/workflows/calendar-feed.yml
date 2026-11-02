@@ -1,0 +1,70 @@
+name: calendar-feed
+
+# Mỗi đêm tạo file lịch .ics từ Google Sheet 工作日報 (hàng 春豐) và đưa lên nhánh
+# `calendar-feed`. iPhone đăng ký lịch bằng link:
+#   https://raw.githubusercontent.com/<owner>/<repo>/calendar-feed/chunfeng.ics
+
+on:
+  schedule:
+    - cron: '5 17 * * *' # 00:05 giờ Việt Nam
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - tools/sheet-calendar-sync/ics/**
+      - .github/workflows/calendar-feed.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: calendar-feed
+  cancel-in-progress: false
+
+env:
+  SHEET_ID: 1Nzi11B4LTZI5juPNof_8Ak6lxv4axrZB
+  PERSON: 春豐
+  FEED_BRANCH: calendar-feed
+  FEED_FILE: chunfeng.ics
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install --quiet openpyxl
+
+      - name: Build ICS
+        run: |
+          mkdir -p out
+          python tools/sheet-calendar-sync/ics/build_ics.py \
+            --src "https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx" \
+            --name "${PERSON}" \
+            --out "out/${FEED_FILE}"
+
+      - name: Publish to feed branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir feed && cd feed
+          git init -q -b "${FEED_BRANCH}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q origin "${FEED_BRANCH}"; then
+            git checkout -q -B "${FEED_BRANCH}" FETCH_HEAD
+          fi
+          cp "../out/${FEED_FILE}" .
+          git add "${FEED_FILE}"
+          if git diff --cached --quiet; then
+            echo "Không có thay đổi."
+            exit 0
+          fi
+          git commit -q -m "feed: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q origin "HEAD:${FEED_BRANCH}"

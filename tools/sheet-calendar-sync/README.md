@@ -1,7 +1,18 @@
 # Đồng bộ Sheet 工作日報 → Calendar iPhone (một chiều)
 
-Google Apps Script gắn vào file Google Sheet, mỗi ngày lúc 0h đọc hàng **春豐** và cập
-nhật một Google Calendar riêng (`春豐 工作日報`). iPhone thêm tài khoản Google là thấy lịch này.
+Hai cách làm, cùng một quy tắc:
+
+1. **Lịch đăng ký (.ics) qua GitHub Actions** — đang dùng. Workflow
+   `.github/workflows/calendar-feed.yml` chạy mỗi đêm 00:05 giờ Việt Nam, tải sheet
+   (chia sẻ công khai) bằng link export, chạy `ics/build_ics.py` và đưa file
+   `chunfeng.ics` lên nhánh `calendar-feed`. iPhone đăng ký lịch bằng link:
+   `https://raw.githubusercontent.com/maxnguyen247-svg/openclaw-zalocontrol/calendar-feed/chunfeng.ics`
+   (Cài đặt → Lịch → Tài khoản → Thêm tài khoản → Khác → Thêm lịch đăng ký).
+   Không cần tài khoản Google trên máy. iPhone tự tải lại lịch định kỳ.
+2. **Google Apps Script** (`Code.gs`) — cần máy tính để cài, sự kiện nằm trong Google
+   Calendar. Hướng dẫn ở phần dưới.
+
+Cả hai đều chỉ đọc sheet, không ghi ngược.
 
 ## Quy tắc
 
@@ -15,7 +26,15 @@ nhật một Google Calendar riêng (`春豐 工作日報`). iPhone thêm tài k
 - Ô có xuống dòng được nối bằng ` / ` trong tiêu đề.
 - Script tạo một tab ẩn `_CalSync` để nhớ sự kiện nào thuộc ngày nào. Không xóa tab này.
 
-## Cài đặt (làm một lần)
+## Chạy thử `build_ics.py` tại chỗ
+
+```bash
+pip install openpyxl
+python3 ics/build_ics.py --src "https://docs.google.com/spreadsheets/d/<ID>/export?format=xlsx" --name 春豐 --out chunfeng.ics
+python3 ics/build_ics.py --src file.xlsx --today 2026-03-10 --no-fallback   # kiểm thử
+```
+
+## Cài đặt Apps Script (cách 2, làm một lần)
 
 1. Mở Google Sheet → **Extensions → Apps Script**.
 2. Xóa nội dung mặc định, dán toàn bộ `Code.gs` vào, bấm Save.
