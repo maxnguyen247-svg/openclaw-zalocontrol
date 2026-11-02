@@ -2,10 +2,11 @@
  * Đồng bộ MỘT CHIỀU: Google Sheet (hàng 春豐) -> Google Calendar -> Calendar iPhone.
  *
  * Cấu trúc sheet: hàng 1 = ngày, hàng 2 = 預計工作 / 實際工作, cột B = tên.
- * Mỗi ngày tạo tối đa 1 sự kiện cả ngày:
- *   - ngày <= hôm nay : lấy cột 實際工作  -> "[實際] nội dung" (xanh lá)
+ * Mỗi ngày tạo tối đa 1 sự kiện cả ngày, tiêu đề = nội dung ô:
+ *   - ngày <= hôm nay : lấy cột 實際工作 (xanh lá)
  *                        (nếu cột 實際 trống và FALLBACK_TO_PLAN = true thì lấy 預計)
- *   - ngày >  hôm nay : lấy cột 預計工作  -> "[預計] nội dung" (xanh dương)
+ *   - ngày >  hôm nay : lấy cột 預計工作 (xanh dương)
+ * PREFIX: điền '[實際] ' / '[預計] ' nếu muốn có nhãn ở đầu tiêu đề.
  * Chạy tự động mỗi ngày lúc 0h (RUN_HOUR). Sheet là nguồn chuẩn: sửa/xóa trên
  * điện thoại sẽ bị ghi đè ở lần chạy kế tiếp.
  *
@@ -17,7 +18,7 @@ const CONFIG = {
   SHEETS: ['2026工作日報'],            // thêm '2025工作日報', ... nếu muốn đồng bộ năm khác
   CAL_NAME: '春豐 工作日報',
   LABEL: { plan: '預計工作', actual: '實際工作' },
-  PREFIX: { plan: '[預計] ', actual: '[實際] ' },
+  PREFIX: { plan: '', actual: '' },      // nhãn đầu tiêu đề, ví dụ '[預計] ' / '[實際] '
   FALLBACK_TO_PLAN: true,              // ngày đã qua mà 實際 trống -> dùng 預計
   RUN_HOUR: 0,                         // giờ chạy hằng ngày (0 = 0h-1h sáng)
   MAP_SHEET: '_CalSync'                // sheet ẩn: ngày | eventId | loại | nội dung đã đồng bộ

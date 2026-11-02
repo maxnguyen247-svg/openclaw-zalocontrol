@@ -16,12 +16,14 @@ Cả hai đều chỉ đọc sheet, không ghi ngược.
 
 ## Quy tắc
 
-| Ngày trong sheet | Lấy cột | Tiêu đề sự kiện | Màu |
-|---|---|---|---|
-| ≤ hôm nay | 實際工作 (nếu trống và `FALLBACK_TO_PLAN = true` → 預計工作) | `[實際] …` / `[預計] …` | xanh lá / xanh dương |
-| > hôm nay | 預計工作 | `[預計] …` | xanh dương |
+| Ngày trong sheet | Lấy cột | Tiêu đề sự kiện |
+|---|---|---|
+| ≤ hôm nay | 實際工作 (nếu trống và fallback bật → 預計工作) | nội dung ô |
+| > hôm nay | 預計工作 | nội dung ô |
 
 - Mỗi ngày tối đa 1 sự kiện cả ngày. Ô trống → không có sự kiện (sự kiện cũ bị xóa).
+- Tiêu đề không có nhãn. Muốn thêm `[實際]`/`[預計]` vào đầu: thêm `--label` vào lệnh
+  trong workflow (cách 1) hoặc điền `PREFIX` trong `Code.gs` (cách 2, kèm màu xanh lá/xanh dương).
 - Sheet là nguồn chuẩn: sửa, xóa hay kéo sự kiện trên điện thoại sẽ bị ghi đè ở lần chạy kế tiếp.
 - Ô có xuống dòng được nối bằng ` / ` trong tiêu đề.
 - Script tạo một tab ẩn `_CalSync` để nhớ sự kiện nào thuộc ngày nào. Không xóa tab này.

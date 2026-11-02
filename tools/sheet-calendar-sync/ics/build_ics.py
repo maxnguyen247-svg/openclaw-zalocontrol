@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Tạo file .ics (lịch đăng ký) từ hàng của một người trong Google Sheet 工作日報.
 
-Quy tắc mỗi ngày (tối đa 1 sự kiện cả ngày):
-  - ngày <= hôm nay : cột 實際工作 -> "[實際] ..."; nếu trống và --fallback -> cột 預計工作
-  - ngày >  hôm nay : cột 預計工作 -> "[預計] ..."
+Quy tắc mỗi ngày (tối đa 1 sự kiện cả ngày, tiêu đề = nội dung ô):
+  - ngày <= hôm nay : cột 實際工作; nếu trống và --fallback -> cột 預計工作
+  - ngày >  hôm nay : cột 預計工作
+  (--label thêm "[實際] " / "[預計] " vào đầu tiêu đề)
 
 Dùng:
   python3 build_ics.py --src <URL export xlsx | file.xlsx> --name 春豐 --out chunfeng.ics
@@ -106,7 +107,7 @@ def fold(line):
     return '\r\n'.join(out)
 
 
-def to_ics(events, name, tz, uid_domain):
+def to_ics(events, name, tz, uid_domain, label=False):
     tag = hashlib.md5(name.encode('utf-8')).hexdigest()[:8]
     lines = [
         'BEGIN:VCALENDAR',
@@ -129,7 +130,7 @@ def to_ics(events, name, tz, uid_domain):
             f'DTSTAMP:{d}T000000Z',
             f'DTSTART;VALUE=DATE:{d}',
             f'DTEND;VALUE=DATE:{nxt}',
-            f'SUMMARY:{esc(PREFIX[kind] + text)}',
+            f'SUMMARY:{esc((PREFIX[kind] if label else "") + text)}',
             'TRANSP:TRANSPARENT',
             'END:VEVENT',
         ]
@@ -149,6 +150,7 @@ def main():
     ap.add_argument('--fallback', dest='fallback', action='store_true', default=True,
                     help='ngày đã qua mà 實際 trống thì lấy 預計 (mặc định bật)')
     ap.add_argument('--no-fallback', dest='fallback', action='store_false')
+    ap.add_argument('--label', action='store_true', help='thêm [實際]/[預計] vào đầu tiêu đề (mặc định không)')
     ap.add_argument('--uid-domain', default='openclaw-zalocontrol')
     ap.add_argument('--out', default='-')
     a = ap.parse_args()
@@ -160,7 +162,7 @@ def main():
     else:
         sheets = [s.strip() for s in a.sheets.split(',') if s.strip()]
     events = collect(wb, sheets, a.name, a.name_col, today, a.fallback)
-    ics = to_ics(events, a.name, a.tz, a.uid_domain)
+    ics = to_ics(events, a.name, a.tz, a.uid_domain, a.label)
     if a.out == '-':
         sys.stdout.write(ics)
     else:
