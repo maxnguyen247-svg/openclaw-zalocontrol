@@ -3,12 +3,24 @@
 Hai cách làm, cùng một quy tắc:
 
 1. **Lịch đăng ký (.ics) qua GitHub Actions** — đang dùng. Workflow
-   `.github/workflows/calendar-feed.yml` chạy mỗi 10 phút, tải sheet
-   (chia sẻ công khai) bằng link export, chạy `ics/build_ics.py` (chỉ lấy sự kiện từ
-   30 ngày trước đến 45 ngày sau hôm nay, đổi ở `--past-days`/`--future-days`) và đưa file
-   `chunfeng.ics` lên nhánh `calendar-feed` khi nội dung có thay đổi. iPhone đăng ký lịch bằng link:
-   `https://raw.githubusercontent.com/maxnguyen247-svg/openclaw-zalocontrol/calendar-feed/chunfeng.ics`
-   (Cài đặt → Lịch → Tài khoản → Thêm tài khoản → Khác → Thêm lịch đăng ký).
+   `.github/workflows/calendar-feed.yml` chạy mỗi 10 phút, tải sheet (chia sẻ công khai) một lần,
+   rồi dựng **mỗi nhân viên một file lịch** (nhóm dòng 10-14) bằng `ics/build_ics.py`
+   (chỉ lấy sự kiện từ 30 ngày trước đến 45 ngày sau hôm nay, đổi ở `--past-days`/`--future-days`)
+   và đưa lên nhánh `calendar-feed` khi nội dung có thay đổi. Lịch đăng ký trên iPhone chỉ có
+   một màu cho cả lịch, nên muốn mỗi người một màu thì mỗi người một lịch riêng:
+
+   | Nhân viên | File (`https://raw.githubusercontent.com/maxnguyen247-svg/openclaw-zalocontrol/calendar-feed/…`) | Màu gợi ý |
+   |---|---|---|
+   | 春豐 | `chunfeng.ics` | xanh dương |
+   | 名翔 | `mingxiang.ics` | cam |
+   | 曰廣 | `yueguang.ics` | tím |
+   | 維院 | `weiyuan.ics` | hồng |
+   | 文穩 | `wenwen.ics` | xanh ngọc |
+
+   Thêm/bớt người: sửa danh sách `PEOPLE` trong workflow (`tên ở cột B|tên file|màu`).
+   iPhone: Cài đặt → Lịch → Tài khoản → Thêm tài khoản → Khác → Thêm lịch đăng ký (làm cho từng link).
+   Màu trong file chỉ là gợi ý; nếu iPhone không dùng thì đổi màu ở app Lịch → Lịch → bấm (i) cạnh tên lịch.
+   Repo công khai nên ai có link đều đọc được các lịch này (chủ sheet đã đồng ý).
    Không cần tài khoản Google trên máy. iPhone tự tải lại lịch định kỳ.
 2. **Google Apps Script** (`Code.gs`) — cần máy tính để cài, sự kiện nằm trong Google
    Calendar. Hướng dẫn ở phần dưới.
