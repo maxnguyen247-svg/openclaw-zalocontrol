@@ -1,8 +1,8 @@
 name: calendar-feed
 
-# Mỗi 10 phút tạo file lịch .ics từ Google Sheet 工作日報 (hàng 春豐) và đưa lên nhánh
-# `calendar-feed`. iPhone đăng ký lịch bằng link:
-#   https://raw.githubusercontent.com/<owner>/<repo>/calendar-feed/chunfeng.ics
+# Mỗi 10 phút tạo file lịch .ics cho từng nhân viên từ Google Sheet 工作日報 và đưa lên
+# nhánh `calendar-feed`. Mỗi người một lịch (một màu), iPhone đăng ký từng link:
+#   https://raw.githubusercontent.com/<owner>/<repo>/calendar-feed/<slug>.ics
 
 on:
   schedule:
@@ -23,9 +23,14 @@ concurrency:
 
 env:
   SHEET_ID: 1Nzi11B4LTZI5juPNof_8Ak6lxv4axrZB
-  PERSON: 春豐
   FEED_BRANCH: calendar-feed
-  FEED_FILE: chunfeng.ics
+  # tên ở cột B | tên file | màu gợi ý của lịch
+  PEOPLE: |
+    春豐|chunfeng|#2563EB
+    名翔|mingxiang|#F97316
+    曰廣|yueguang|#9333EA
+    維院|weiyuan|#DB2777
+    文穩|wenwen|#0D9488
 
 jobs:
   build:
@@ -39,15 +44,25 @@ jobs:
 
       - run: pip install --quiet openpyxl
 
-      - name: Build ICS
+      - name: Download sheet once
         run: |
+          curl -fsSL -o sheet.xlsx "https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx"
+
+      - name: Build ICS for each person
+        run: |
+          set -e
           mkdir -p out
-          python tools/sheet-calendar-sync/ics/build_ics.py \
-            --src "https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx" \
-            --name "${PERSON}" \
-            --past-days 30 --future-days 45 \
-            --mark icon \
-            --out "out/${FEED_FILE}"
+          while IFS='|' read -r NAME SLUG COLOR; do
+            [ -z "$NAME" ] && continue
+            python tools/sheet-calendar-sync/ics/build_ics.py \
+              --src sheet.xlsx \
+              --name "$NAME" \
+              --past-days 30 --future-days 45 \
+              --mark icon \
+              --color "$COLOR" \
+              --out "out/${SLUG}.ics"
+          done <<< "$PEOPLE"
+          ls -l out
 
       - name: Publish to feed branch
         env:
@@ -62,8 +77,8 @@ jobs:
           if git fetch -q origin "${FEED_BRANCH}"; then
             git checkout -q -B "${FEED_BRANCH}" FETCH_HEAD
           fi
-          cp "../out/${FEED_FILE}" .
-          git add "${FEED_FILE}"
+          cp ../out/*.ics .
+          git add ./*.ics
           if git diff --cached --quiet; then
             echo "Không có thay đổi."
             exit 0

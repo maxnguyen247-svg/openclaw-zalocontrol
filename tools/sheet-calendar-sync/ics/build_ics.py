@@ -111,7 +111,7 @@ def fold(line):
     return '\r\n'.join(out)
 
 
-def to_ics(events, name, tz, uid_domain, mark='none'):
+def to_ics(events, name, tz, uid_domain, mark='none', color=None):
     marks = {'none': {'plan': '', 'actual': ''}, 'icon': ICON, 'label': PREFIX}[mark]
     tag = hashlib.md5(name.encode('utf-8')).hexdigest()[:8]
     lines = [
@@ -125,6 +125,8 @@ def to_ics(events, name, tz, uid_domain, mark='none'):
         'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
         'X-PUBLISHED-TTL:PT1H',
     ]
+    if color:
+        lines.append(f'X-APPLE-CALENDAR-COLOR:{color}')
     for date in sorted(events):
         kind, text = events[date]
         d = date.strftime('%Y%m%d')
@@ -159,6 +161,7 @@ def main():
                     help='đánh dấu đầu tiêu đề: icon = 🔵 dự kiến / 🟢 thực tế; label = [預計]/[實際]; none = không')
     ap.add_argument('--past-days', type=int, default=None, help='chỉ lấy tối đa N ngày trước hôm nay (mặc định: không giới hạn)')
     ap.add_argument('--future-days', type=int, default=None, help='chỉ lấy tối đa N ngày sau hôm nay (mặc định: không giới hạn)')
+    ap.add_argument('--color', help='màu gợi ý của cả lịch, dạng #RRGGBB (iPhone có thể bỏ qua, khi đó tự chọn trong app Lịch)')
     ap.add_argument('--uid-domain', default='openclaw-zalocontrol')
     ap.add_argument('--out', default='-')
     a = ap.parse_args()
@@ -170,7 +173,7 @@ def main():
     else:
         sheets = [s.strip() for s in a.sheets.split(',') if s.strip()]
     events = collect(wb, sheets, a.name, a.name_col, today, a.fallback, a.past_days, a.future_days)
-    ics = to_ics(events, a.name, a.tz, a.uid_domain, a.mark)
+    ics = to_ics(events, a.name, a.tz, a.uid_domain, a.mark, a.color)
     if a.out == '-':
         sys.stdout.write(ics)
     else:
